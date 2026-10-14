@@ -260,12 +260,19 @@ export function LessonRunner({ lesson, chestSlot = null }: LessonRunnerProps) {
   const hearts = useProgressStore(s => s.hearts);
   const gems = useProgressStore(s => s.gems);
   const backdropId = useProgressStore(s => s.equippedBackdrop);
+  // 默认「干净简洁」不写死浅色，交给 .lesson-canvas 在暗色下换成 night 底。
+  // 浅色装饰背景同样不进暗色（否则浅色字会糊在浅色渐变上）；星空/极光这类
+  // 深色场景（needsOverlay）暗色下继续用。
   const backdropStyle = useMemo<React.CSSProperties>(() => {
     const item = getCosmeticById(backdropId) as LessonBackdrop | undefined;
-    if (!item || item.type !== "lesson_backdrop") {
-      return { background: "#F7F7F7" };
+    if (!item || item.type !== "lesson_backdrop" || item.id === "backdrop_default") {
+      return {};
     }
-    return { background: item.data.background };
+    const vars: Record<string, string> = { "--lesson-bg": item.data.background };
+    if (item.data.needsOverlay) {
+      vars["--lesson-bg-dark"] = item.data.background;
+    }
+    return vars as React.CSSProperties;
   }, [backdropId]);
   const prefersReduced = useReducedMotion();
 
@@ -1004,7 +1011,7 @@ export function LessonRunner({ lesson, chestSlot = null }: LessonRunnerProps) {
   return (
     <motion.main
       animate={shakeControls}
-      className="h-screen flex flex-col relative"
+      className="lesson-canvas h-screen flex flex-col relative"
       style={backdropStyle}
     >
       {/* +XP 飘字层 —— fixed 定位独立于 layout，不影响滚动 */}
